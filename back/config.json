@@ -1,0 +1,9 @@
+{
+    "server": {
+        "port": 8046
+    },
+    "database": {
+        "name": "testdb.sqlite",
+        "path": "./DB/"
+    }
+}
