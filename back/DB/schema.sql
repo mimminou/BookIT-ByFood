@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS Books (
     title TEXT NOT NULL,
     author TEXT NOT NULL,
     num_pages INTEGER,
-    publication_date DATE NOT NULL,
+    pub_date DATE NOT NULL
 );

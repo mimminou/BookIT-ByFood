@@ -29,7 +29,7 @@ type config struct {
 func showHelp() {
 	fmt.Println("Usage:")
 	fmt.Println("-h : Prints this help message and exits")
-	fmt.Println("-s : Setup DB and run Server")
+	fmt.Println("-s : Setup DB and exits, needs to run once before running the server first time")
 }
 
 // reads json config from file, returns pointer to config struct
@@ -78,8 +78,8 @@ func handleArgs() {
 	}
 }
 
-func checkDB(config *config) {
-	if _, err := os.Stat(config.Db.Path + config.Db.Name); err == nil {
+func checkDB(name, path string) {
+	if _, err := os.Stat(path + name); err == nil {
 		return
 	} else {
 		if errors.Is(err, os.ErrNotExist) {
@@ -104,7 +104,8 @@ func main() {
 	}
 
 	handleArgs()
-	checkDB(config)
+
+	checkDB(config.Db.Name, config.Db.Path)
 
 	// connect to DB, then pass DB instance to server
 	db, err := core.ConnectDb(config.Db.Name, config.Db.Path)

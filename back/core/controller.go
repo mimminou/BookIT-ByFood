@@ -5,9 +5,9 @@ import (
 )
 
 /**
-This files defines basic CRUD ops on DB
-Book_idrained from using ORMs although I'm aware it's better to use them, just as a simple showcase of my sql knowledge
-All queries are done using RAW SQL
+This file defines basic CRUD ops on DB
+Refrained from using an ORM although I'm aware it's almost always better to use them, to showcase that I can use RAW SQL
+All queries are done using Prepared Statements to directly mitigate SQL injections
 **/
 
 // get all books
@@ -63,11 +63,12 @@ func AddBook(db *sql.DB, book Book) error {
 
 // delete book
 func DeleteBook(db *sql.DB, id int) error {
-	_, err := db.Exec("DELETE FROM books WHERE book_id = ?", id)
+	_, err := db.Exec("DELETE FROM Books WHERE book_id = ?", id)
 	return err
 }
 
 // update book
+// PUT request, not PATCH, so no need to do partial update
 func UpdateBook(db *sql.DB, book Book) error {
 	_, err := db.Exec("UPDATE Books SET title = ?, author = ?, num_pages = ?, pub_date = ? WHERE Book_id = ?", book.Title, book.Author, book.Num_Pages, book.Pub_Date, book.Book_Id)
 	return err

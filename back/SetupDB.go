@@ -43,5 +43,7 @@ func SetupDatabase() error {
 	}
 
 	//DB Setup Complete
+	log.Println("DB Setup Complete")
+	os.Exit(0)
 	return nil
 }
