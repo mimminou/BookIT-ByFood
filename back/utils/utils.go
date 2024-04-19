@@ -1,6 +1,9 @@
-package core
+package utils
 
-import "os"
+import (
+	"github.com/mimminou/BookIT-ByFood/back/models"
+	"os"
+)
 
 //Utility functions
 
@@ -14,7 +17,7 @@ func LogQuery(query string) {
 // Verifiy if fields are empty, return empty fields
 // Num pages is not checked because I decided to allow it to be empty
 
-func CheckEmptyFields(book Book) []string {
+func CheckEmptyFields(book models.Book) []string {
 	var emptyFields []string
 	if book.Title == "" {
 		emptyFields = append(emptyFields, "title")

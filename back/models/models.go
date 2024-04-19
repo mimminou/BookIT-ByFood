@@ -1,4 +1,4 @@
-package core
+package models
 
 //Here are the structs that define the models of the DB, needed for unmarshalling/Marhsalling Json
 

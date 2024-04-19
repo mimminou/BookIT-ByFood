@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimminou/BookIT-ByFood/back/database"
+	"github.com/mimminou/BookIT-ByFood/back/server"
 	"log"
 	"os"
-
-	"github.com/mimminou/BookIT-ByFood/back/core"
 )
 
 // config struct for config.json
@@ -88,7 +88,6 @@ func checkDB(name, path string) {
 			log.Fatal("Error : ", err)
 		}
 	}
-
 }
 
 func main() {
@@ -108,12 +107,12 @@ func main() {
 	checkDB(config.Db.Name, config.Db.Path)
 
 	// connect to DB, then pass DB instance to server
-	db, err := core.ConnectDb(config.Db.Name, config.Db.Path)
+	db, err := database.ConnectDb(config.Db.Name, config.Db.Path)
 	if err != nil {
 		fmt.Println("Error connecting to database: ", err)
 		os.Exit(1)
 	}
 	defer db.Close()
 
-	core.Serve(config.Server.Port, db)
+	server.Serve(config.Server.Port, db)
 }
