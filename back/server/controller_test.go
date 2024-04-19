@@ -1,9 +1,11 @@
 package server
 
 import (
+	"database/sql"
+	"testing"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/mimminou/BookIT-ByFood/back/models"
-	"testing"
 )
 
 func TestControllerGet(t *testing.T) {
@@ -46,7 +48,7 @@ func TestControllerAdd(t *testing.T) {
 	}
 
 	book := models.Book{10, "The Hobbit", "J.R.R. Tolkien", pagesPointers[14], "1937-09-21"}
-	err := AddBook(db, book)
+	_, err := AddBook(db, book)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,9 +68,8 @@ func TestControllerDelete(t *testing.T) {
 
 	t.Run("Testing deleting non existing book", func(t *testing.T) {
 		err := DeleteBook(db, 60)
-		if err != nil {
-			//This expects nil because DELETE in sqlite is a no op if it can't match an ID
-			t.Errorf("Expected nil, got %v", err)
+		if err != sql.ErrNoRows {
+			t.Errorf("Expected NoRows error, got %v", err)
 		}
 	})
 }
@@ -87,10 +88,10 @@ func TestControllerUpdate(t *testing.T) {
 	})
 
 	t.Run("Testing update non Existing book", func(t *testing.T) {
-		book := models.Book{40, "LOTR", "Test Author", nil, "1951-12-18"}
+		book := models.Book{50, "LOTR", "Test Author", nil, "1951-12-18"}
 		err := UpdateBook(db, book)
-		if err == nil {
-			t.Errorf("Expected error, got %v", err)
+		if err != sql.ErrNoRows {
+			t.Errorf("Expected NoRows error, got %v", err)
 		}
 	})
 }

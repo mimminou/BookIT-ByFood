@@ -37,34 +37,30 @@ func GetBook(db *sql.DB, Book_id int) (models.Book, error) {
 	return book, err
 }
 
-// Needed for pagination
-func GetOffsetBooks(db *sql.DB, limit int, offset int) ([]models.Book, error) {
-	rows, err := db.Query("SELECT * FROM Books LIMIT ? OFFSET ?", limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	books := make([]models.Book, 0)
-	for rows.Next() {
-		var book models.Book
-		if err := rows.Scan(&book.Book_Id, &book.Title, &book.Author, &book.Num_Pages, &book.Pub_Date); err != nil {
-			return nil, err
-		}
-		books = append(books, book)
-	}
-	return books, nil
-}
-
 // add book
-func AddBook(db *sql.DB, book models.Book) error {
-	_, err := db.Exec("INSERT INTO Books (title, author, num_pages, pub_date) VALUES (?, ?, ?, ?)", book.Title, book.Author, book.Num_Pages, book.Pub_Date)
-	return err
+func AddBook(db *sql.DB, book models.Book) (int, error) {
+	operation, err := db.Exec("INSERT INTO Books (title, author, num_pages, pub_date) VALUES (?, ?, ?, ?)", book.Title, book.Author, book.Num_Pages, book.Pub_Date)
+	if err != nil {
+		return 0, err
+	}
+	RowsInserted, err := operation.LastInsertId()
+	if RowsInserted == 0 {
+		return 0, sql.ErrNoRows
+	}
+
+	return int(RowsInserted), err
 }
 
 // delete book
 func DeleteBook(db *sql.DB, id int) error {
-	_, err := db.Exec("DELETE FROM Books WHERE book_id = ?", id)
+	operation, err := db.Exec("DELETE FROM Books WHERE book_id = ?", id)
+	if err != nil {
+		return err
+	}
+	RowsDeleted, err := operation.RowsAffected()
+	if RowsDeleted == 0 {
+		return sql.ErrNoRows
+	}
 	return err
 }
 

@@ -123,6 +123,8 @@ func (handler *Handler) Add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var book models.Book
+	defer r.Body.Close()
+
 	decodeErr := json.NewDecoder(r.Body).Decode(&book)
 
 	if decodeErr != nil {
@@ -135,19 +137,27 @@ func (handler *Handler) Add(w http.ResponseWriter, r *http.Request) {
 	emptyFields := utils.CheckEmptyFields(book)
 	if len(emptyFields) > 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		jsonResponse, _ := json.Marshal(ErrMessage{Msg: decodeErr.Error()})
+		jsonResponse, _ := json.Marshal(ErrMessage{Msg: "The following fields are empty: " + strings.Join(emptyFields, ", ")})
 		w.Write(jsonResponse)
 		return
 	}
 
-	err := AddBook(handler.db, book)
+	if utils.ValidateDate(book.Pub_Date) == false {
+		w.WriteHeader(http.StatusBadRequest)
+		jsonResponse, _ := json.Marshal(ErrMessage{Msg: "Invalid date format. Should be YYYY-MM-DD"})
+		w.Write(jsonResponse)
+		return
+	}
+
+	id, err := AddBook(handler.db, book)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		jsonResponse, _ := json.Marshal(ErrMessage{Msg: decodeErr.Error()})
+		jsonResponse, _ := json.Marshal(ErrMessage{Msg: err.Error()})
 		w.Write(jsonResponse)
 		return
 
 	}
+	book.Book_Id = id
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(book)
 }
@@ -170,6 +180,12 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	delErr := DeleteBook(handler.db, id)
 	if delErr != nil {
+		if delErr == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			jsonResponse, _ := json.Marshal(ErrMessage{Msg: delErr.Error()})
+			w.Write(jsonResponse)
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		jsonResponse, _ := json.Marshal(ErrMessage{Msg: delErr.Error()})
 		w.Write(jsonResponse)
@@ -202,12 +218,20 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	book.Book_Id = id
 	UpdateErr := UpdateBook(handler.db, book)
 	if UpdateErr != nil {
+		if UpdateErr == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			jsonResponse, _ := json.Marshal(ErrMessage{Msg: UpdateErr.Error()})
+			w.Write(jsonResponse)
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		jsonResponse, _ := json.Marshal(ErrMessage{Msg: UpdateErr.Error()})
 		w.Write(jsonResponse)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(book)
 }
 
 // serve

@@ -1,8 +1,10 @@
 package utils
 
 import (
-	"github.com/mimminou/BookIT-ByFood/back/models"
 	"os"
+	"time"
+
+	"github.com/mimminou/BookIT-ByFood/back/models"
 )
 
 //Utility functions
@@ -29,4 +31,9 @@ func CheckEmptyFields(book models.Book) []string {
 		emptyFields = append(emptyFields, "pub_date")
 	}
 	return emptyFields
+}
+
+func ValidateDate(date string) bool {
+	_, err := time.Parse("2006-01-02", date)
+	return err == nil
 }
