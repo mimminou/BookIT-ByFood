@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -13,6 +12,10 @@ import (
 
 type Handler struct {
 	db *sql.DB
+}
+
+type ErrMessage struct {
+	Msg string `json:"msg"`
 }
 
 // These are good enough for requirments of this project, but it's much better to use a routing Library like Gorilla or Chi
@@ -29,10 +32,10 @@ func (handler *Handler) Router(w http.ResponseWriter, r *http.Request) {
 
 	if BookRegex.MatchString(r.URL.Path) {
 		switch r.Method {
-		case "GET":
-			handler.GetAll(w, r)
 		case "POST":
 			handler.Add(w, r)
+		case "GET":
+			handler.GetAll(w, r)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -61,9 +64,16 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 	books, err := GetBooks(handler.db)
 	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: err.Error()})
+		return
 	}
+	if len(books) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: "No books found"})
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(books)
 }
 
@@ -87,10 +97,13 @@ func (handler *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 
 	fetchedBook, err := GetBook(handler.db, id)
 	if err != nil {
-		log.Println(err)
 		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: "Book not found"})
+		return
 	}
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(fetchedBook)
+
 }
 
 // add new book
@@ -102,12 +115,30 @@ func (handler *Handler) Add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var book Book
-	json.NewDecoder(r.Body).Decode(&book)
+	decodeErr := json.NewDecoder(r.Body).Decode(&book)
+
+	if decodeErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: decodeErr.Error()})
+		return
+	}
+
+	emptyFields := CheckEmptyFields(book)
+	if len(emptyFields) > 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: "Bad Request, missing value for fields: " + strings.Join(emptyFields, ", ")})
+		return
+	}
+
 	err := AddBook(handler.db, book)
 	if err != nil {
-		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: err.Error()})
+		return
+
 	}
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(book)
 }
 
 // delete existing artcile
@@ -128,8 +159,10 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	delErr := DeleteBook(handler.db, id)
 	if delErr != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: delErr.Error()})
+		return
+
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -155,9 +188,11 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	book.Book_Id = id
 	UpdateErr := UpdateBook(handler.db, book)
 	if UpdateErr != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrMessage{Msg: UpdateErr.Error()})
+		return
 	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -168,6 +203,7 @@ func Serve(port uint16, db *sql.DB) {
 	serverMux := http.NewServeMux()
 	dbRequestHandler := &Handler{db: db}
 	middleWareMux := Cors(Logging(serverMux))
+	serverMux.HandleFunc("/books", dbRequestHandler.Router)
 	serverMux.HandleFunc("/books/", dbRequestHandler.Router)
 
 	fmt.Println("Serving on port", port)
