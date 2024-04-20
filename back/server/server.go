@@ -41,6 +41,11 @@ func (handler *Handler) Router(w http.ResponseWriter, r *http.Request) {
 			handler.Add(w, r)
 		case "GET":
 			handler.GetAll(w, r)
+		case "OPTIONS":
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.WriteHeader(http.StatusOK)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -55,6 +60,11 @@ func (handler *Handler) Router(w http.ResponseWriter, r *http.Request) {
 		handler.Update(w, r)
 	case "DELETE":
 		handler.Delete(w, r)
+	case "OPTIONS":
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.WriteHeader(http.StatusOK)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -118,6 +128,10 @@ func (handler *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 func (handler *Handler) Add(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
