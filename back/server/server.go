@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -259,6 +260,10 @@ func Serve(port uint16, db *sql.DB) {
 	serverMux.HandleFunc("/books/", dbRequestHandler.Router)
 
 	fmt.Println("Serving on port", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), middleWareMux)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), middleWareMux)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer db.Close()
 }
