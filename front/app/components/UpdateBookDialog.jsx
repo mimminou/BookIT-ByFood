@@ -1,32 +1,33 @@
 import { Dialog, DialogHeader, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useState } from "react"
-import { Context } from '../context'
+import { Context } from '@/app/context'
 import { useContext } from 'react'
 
 
-export default function UpdateBookDialog({ open, setOpen }) {
+export default function UpdateBookDialog({ open, setOpen, setBook }) {
     const ctx = useContext(Context)
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        <UpdateBookForm books={ctx.books} setBooks={ctx.setBooks} setOpen={setOpen} book={ctx.selectedBook} book_id={ctx.selectedBookID} />
+                        Update Book
                     </DialogTitle>
                 </DialogHeader>
+                <UpdateBookForm books={ctx.books} setBooks={ctx.setBooks} setBook={setBook} setOpen={setOpen} book={ctx.selectedBook} toaster={ctx.toast} />
             </DialogContent>
         </Dialog>
     )
 }
 
-function UpdateBookForm({ books, setBooks, setOpen, book, book_id }) {
-    const selectedBook = book
+function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
 
+    const oldBook = book
     const [formData, setFormData] = useState({
-        title: selectedBook.title,
-        author: selectedBook.author,
-        publicationDate: selectedBook.pub_date,
-        totalPages: selectedBook.num_pages,
+        title: book.title,
+        author: book.author,
+        publicationDate: book.pub_date,
+        totalPages: book.num_pages,
     });
 
     const [err, setErr] = useState({ title: false, author: false, publicationDate: false, totalPages: false })
@@ -48,7 +49,7 @@ function UpdateBookForm({ books, setBooks, setOpen, book, book_id }) {
                     newErrors[name] = !/^\d{4}-\d{2}-\d{2}$/.test(value) ? true : false;
                     break;
                 case 'totalPages':
-                    newErrors[name] = !/^\d+$/.test(value) ? true : false;
+                    newErrors[name] = !/^\d+$/.test(value) && value !== "" ? true : false;
                     break;
                 default:
                     break;
@@ -71,6 +72,7 @@ function UpdateBookForm({ books, setBooks, setOpen, book, book_id }) {
             alert('Please check the following fields : \n' + errorList);
             return;
         }
+
         //Optimistic update
         const newBook = {
             title: formData.title,
@@ -78,18 +80,30 @@ function UpdateBookForm({ books, setBooks, setOpen, book, book_id }) {
             pub_date: formData.publicationDate,
             num_pages: parseInt(formData.totalPages),
         }
-        selectedBook.book_id = book_id
-        MakeRequest(newBook, book_id)
 
+        MakeRequest(newBook, oldBook, books, setBooks, setBook, toaster)
 
-        // Submit form data (replace with your submission logic)
-        console.log('Submitting form data:', formData);
+        const updatedBook = {
+            book_id: book.book_id,
+            title: formData.title,
+            author: formData.author,
+            pub_date: formData.publicationDate,
+            num_pages: parseInt(formData.totalPages)
+        }
+        if (setBook) {
+            setBook(updatedBook)
+        }
 
-        const currentBooks = books
-        const updatedBookIndex = currentBooks.findIndex((book) => book.book_id === book_id)
-        currentBooks[updatedBookIndex] = newBook
+        const updatedBookList = books.map((element) => {
+            if (element.book_id === updatedBook.book_id) {
+                return updatedBook
+            }
+            return element
+        })
+
         setOpen(false)
-        setBooks([...currentBooks])
+        setBooks(updatedBookList)
+
     };
 
     return (
@@ -138,18 +152,61 @@ function UpdateBookForm({ books, setBooks, setOpen, book, book_id }) {
                 onChange={handleChange}
             />
 
-            <button type="submit">Update</button>
+            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Update</button>
         </form>
     );
 }
 
-function MakeRequest(Book, book_id) {
 
-    fetch(`http://localhost:8046/books/${book_id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(Book)
-    })
+async function MakeRequest(newBook, oldBook, books, setBooks, setBook, toaster) {
+
+    try {
+        const response = await fetch(`http://localhost:8046/books/${oldBook.book_id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newBook)
+        })
+
+        if (response.ok) {
+            toaster({
+                description: 'Book Updated',
+            })
+            return
+        }
+        else {
+            if (setBook) {
+                setBook(oldBook)
+            }
+            setBooks(books.map((element) => {
+                if (element.book_id === oldBook.book_id) {
+                    return oldBook
+                }
+                return element
+            }))
+            toaster({
+                title: 'Operation Failed',
+                description: 'Book Update Failed',
+                variant: 'destructive',
+            })
+        }
+    }
+    catch (error) {
+        if (setBook) {
+            setBook(oldBook)
+        }
+        setBooks(books.map((element) => {
+            if (element.book_id === oldBook.book_id) {
+                return oldBook
+            }
+            return element
+        }))
+        toaster({
+            title: 'Operation Failed',
+            description: 'Network Error, Could not connect to server',
+            variant: 'destructive',
+        })
+        return
+    }
 }

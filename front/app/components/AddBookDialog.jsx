@@ -11,7 +11,7 @@ export default function AddBookDialog({ open, setOpen }) {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        <AddBookForm books={ctx.books} setBooks={ctx.setBooks} setOpen={setOpen} />
+                        <AddBookForm books={ctx.books} setBooks={ctx.setBooks} setOpen={setOpen} toaster={ctx.toast} />
                     </DialogTitle>
                 </DialogHeader>
             </DialogContent>
@@ -19,7 +19,7 @@ export default function AddBookDialog({ open, setOpen }) {
     )
 }
 
-function AddBookForm({ books, setBooks, setOpen }) {
+function AddBookForm({ books, setBooks, setOpen, toaster }) {
 
     const [formData, setFormData] = useState({
         title: '',
@@ -27,7 +27,6 @@ function AddBookForm({ books, setBooks, setOpen }) {
         publicationDate: '',
         totalPages: '',
     });
-    console.log(formData)
 
     const [err, setErr] = useState({ title: false, author: false, publicationDate: false, totalPages: false })
 
@@ -72,23 +71,20 @@ function AddBookForm({ books, setBooks, setOpen }) {
             return;
         }
 
-        // Submit form data (replace with your submission logic)
-        console.log('Submitting form data:', formData);
-
-        //Optimistic update
         const newBook = {
             title: formData.title,
             author: formData.author,
             pub_date: formData.publicationDate,
             num_pages: parseInt(formData.totalPages),
         }
-        MakeRequest(newBook)
+        //
+        //it's easier to wait for server response instead of optimistic update here,
+        //there are many edge cases here and this is the most reliable way
+        MakeRequest(newBook, books, setBooks, toaster)
 
-        // Reset form
+        // Reset form, might not be necessary
         setFormData({ title: '', author: '', publicationDate: '', totalPages: '' });
         setOpen(false)
-        const currentBooks = books
-        setBooks([...currentBooks, newBook])
     };
 
     return (
@@ -137,17 +133,46 @@ function AddBookForm({ books, setBooks, setOpen }) {
                 onChange={handleChange}
             />
 
-            <button type="submit">Add</button>
+            <button type="submit" className="bg-green-600 hover:bg-green-700 text-white rounded font-bold px-4 py-2">Add</button>
         </form>
     );
 }
 
-function MakeRequest(Book) {
-    fetch('http://localhost:8046/books', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(Book)
-    })
+async function MakeRequest(Book, books, setBooks, toaster) {
+    try {
+        const response = await fetch('http://localhost:8046/books', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(Book)
+        })
+
+        if (response.ok) {
+            const json = await response.json()
+            setBooks((prevBooks) => [...prevBooks, json])
+            toaster({
+                title: 'Operation Successful',
+                description: 'Book added successfully',
+                variant: 'success',
+            })
+            return
+        }
+        else {
+            setBooks(books)
+            toaster({
+                title: 'Operation Failed',
+                description: 'Could not add Book',
+                variant: 'destructive',
+            })
+        }
+    }
+    catch (error) {
+        toaster({
+            title: 'Operation Failed',
+            description: 'Network Error, Could not connect to server',
+            variant: 'destructive',
+        })
+        setBooks(books)
+    }
 }
