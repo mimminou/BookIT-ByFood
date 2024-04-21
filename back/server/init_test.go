@@ -2,12 +2,11 @@ package server
 
 import (
 	"database/sql"
+	"github.com/mimminou/BookIT-ByFood/back/models"
 	"log"
 	"net/http"
 	"os"
 	"testing"
-
-	"github.com/mimminou/BookIT-ByFood/back/models"
 )
 
 var db *sql.DB

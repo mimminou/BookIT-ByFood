@@ -18,8 +18,7 @@ func Cors(next http.Handler) http.Handler {
 	})
 }
 
-// Logging Middlware, writes requests to console and to log.txt
-// (file size can grow a LOT, checking file size not implemented, not needed for this test project)
+// Logging Middlware, writes requests to console
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logMsg := fmt.Sprintf("Request : %s %s %s", r.RemoteAddr, r.Method, r.URL.Path)
