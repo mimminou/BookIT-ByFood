@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/glebarez/go-sqlite"
 	"log"
 	"os"
 )
@@ -29,7 +29,7 @@ func SetupDatabase() error {
 	}
 
 	//Connect to Sqlite DB, if it doesn't exist it will be created
-	db, err := sql.Open("sqlite3", path+dbname)
+	db, err := sql.Open("sqlite", path+dbname)
 	if err != nil {
 		log.Fatalln(err)
 	}
