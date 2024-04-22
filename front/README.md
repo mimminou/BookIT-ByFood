@@ -1,9 +1,5 @@
 ## NextJS Frontend for the Book Library Assignment
 
-
-
-
-
 ## Setup
 After cloning the repository, cd into the repository directory/front and run `npm install` to fetch missing dependencies
 
