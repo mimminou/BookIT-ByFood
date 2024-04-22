@@ -10,14 +10,20 @@ import (
 	"strconv"
 	"strings"
 
+	_ "github.com/mimminou/BookIT-ByFood/back/docs"
 	"github.com/mimminou/BookIT-ByFood/back/models"
 	"github.com/mimminou/BookIT-ByFood/back/utils"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type Handler struct {
 	db *sql.DB
 }
 
+// ErrMessage is the schema for error responses
+
+// @Description	ErrMessage
+// @Property		msg string true "Error message"
 type ErrMessage struct {
 	Msg string `json:"msg"`
 }
@@ -72,6 +78,19 @@ func (handler *Handler) Router(w http.ResponseWriter, r *http.Request) {
 }
 
 // get all records in DB
+// Get all books
+//
+//	@Summary		Get all books
+//	@Description	Get all books in the DB
+//	@Tags			books
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{array}	models.Book
+//	@Failure		500
+//	@Failure		500	{object}	ErrMessage
+//	@Failure		404	{object}	ErrMessage
+//	@Failure		405
+//	@Router			/books/ [get]
 func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "GET" {
@@ -95,7 +114,19 @@ func (handler *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(books)
 }
 
-// get a single Book
+// Get a single Book
+//
+//	@Summary		Get a single Book
+//	@Description	Get a book by ID
+//	@Tags			books
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		int	true	"Book ID"
+//	@Success		200	{object}	models.Book
+//	@Failure		400
+//	@Failure		404	{object}	ErrMessage
+//	@Failure		405
+//	@Router			/books/{id} [get]
 func (handler *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -122,10 +153,21 @@ func (handler *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(fetchedBook)
-
 }
 
-// add new book
+// Add a new book
+//
+//	@Summary		Add a new book
+//	@Description	Add a new book
+//	@Tags			books
+//	@Accept			json
+//	@Produce		json
+//	@Param			book	body	models.Book	true	"Book"
+//	@Success		200
+//	@Failure		400
+//	@Failure		404	{object}	ErrMessage
+//	@Failure		405
+//	@Router			/books/ [post]
 func (handler *Handler) Add(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
@@ -177,7 +219,19 @@ func (handler *Handler) Add(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(book)
 }
 
-// delete existing artcile
+// delete an existing book
+//
+//	 @Summary		Delete a book
+//		@Description	Delete a book by ID
+//		@Tags			books
+//		@Accept			json
+//		@Produce		json
+//		@Param			id	path	int	true	"Book ID"
+//		@Success		200
+//		@Failure		400
+//		@Failure		404	{object}	ErrMessage
+//		@Failure		405
+//		@Router			/books/{id} [delete]
 func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "DELETE" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -211,6 +265,19 @@ func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 // update existing book
+// @Summary 		Update a book
+// @Description	Update a book by ID
+// @Tags			books
+// @Accept			json
+// @Produce		json
+// @Param			id		path		int			true	"Book ID"
+// @Param			book	body		models.Book	true	"Book"
+// @Success		200		{object}	models.Book
+// @Failure		400		{object}	ErrMessage
+// @Failure		500		{object}	ErrMessage
+// @Failure		404		{object}	ErrMessage
+// @Failure		405
+// @Router			/books/{id} [put]
 func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "PUT" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -258,6 +325,15 @@ func Serve(port uint16, db *sql.DB) {
 	middleWareMux := Cors(ResponseLogging(Logging((serverMux))))
 	serverMux.HandleFunc("/books", dbRequestHandler.Router)
 	serverMux.HandleFunc("/books/", dbRequestHandler.Router)
+
+	//No idea how to make swagger "see" the file, so i'll serve it myself in hope that that the next handleFunc will catch it
+	serverMux.HandleFunc("/swagger.yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "docs/swagger.yaml")
+	})
+	//add swagger link
+	serverMux.HandleFunc("/", httpSwagger.Handler(
+		httpSwagger.URL("/swagger.yaml"),
+	))
 
 	fmt.Println("Serving on port", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), middleWareMux)
