@@ -1,0 +1,179 @@
+definitions:
+  models.Book:
+    description: Book
+    properties:
+      author:
+        description: '@Property author string true "Author"'
+        type: string
+      book_id:
+        description: '@Property book_id int true "Book ID"'
+        type: integer
+      num_pages:
+        description: '@Property num_pages string false "Number of pages"'
+        type: integer
+      pub_date:
+        description: '@Property pub_date int true "Publication date"'
+        type: string
+      title:
+        description: '@Property title string true "Title"'
+        type: string
+    type: object
+  server.ErrMessage:
+    description: ErrMessage
+    properties:
+      msg:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /books/:
+    get:
+      consumes:
+      - application/json
+      description: Get all books in the DB
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Book'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+        "405":
+          description: Method Not Allowed
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+      summary: Get all books
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      description: Add a new book
+      parameters:
+      - description: Book
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/models.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+        "405":
+          description: Method Not Allowed
+      summary: Add a new book
+      tags:
+      - books
+  /books/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a book by ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+        "405":
+          description: Method Not Allowed
+      summary: Delete a book
+      tags:
+      - books
+    get:
+      consumes:
+      - application/json
+      description: Get a book by ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+        "405":
+          description: Method Not Allowed
+      summary: Get a single Book
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      description: Update a book by ID
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Book
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/models.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Book'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+        "405":
+          description: Method Not Allowed
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.ErrMessage'
+      summary: Update a book
+      tags:
+      - books
+swagger: "2.0"

@@ -32,6 +32,10 @@ The server has an stdout to the console that prints incoming requests and their 
 - `/books/{id}`: `PUT` update a specific book by id, takes in a json object of type Book and returns the updated book as json or an error message if not found
 - `/books/{id}`: `DELETE` delete a specific book by id, returns a success message or an error message if not found
 
+### Interactive docs
+Interactive docs were generated using Swagger for this project, simply run the server and access the root address (http://localhost:PORT/)
+
+
 # Tests
 
 Unit tests were written for both /server and /utils.
