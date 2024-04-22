@@ -2,15 +2,14 @@ package database
 
 import (
 	"database/sql"
+	_ "github.com/glebarez/go-sqlite"
 	"log"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 // Connects to the database, returns a pointer to the db and an error value
 func ConnectDb(dbname, path string) (*sql.DB, error) {
 
-	db, err := sql.Open("sqlite3", path+dbname)
+	db, err := sql.Open("sqlite", path+dbname)
 	if err != nil {
 		log.Fatalln(err)
 	}

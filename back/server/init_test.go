@@ -2,6 +2,7 @@ package server
 
 import (
 	"database/sql"
+	_ "github.com/glebarez/go-sqlite"
 	"github.com/mimminou/BookIT-ByFood/back/models"
 	"log"
 	"net/http"
@@ -23,7 +24,7 @@ func setupMockDB() (*sql.DB, error) {
 	pagesPointers[9] = nil
 	pagesPointers[14] = &someInt
 
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		return nil, err
 	}
