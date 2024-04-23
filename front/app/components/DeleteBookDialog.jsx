@@ -73,10 +73,11 @@ async function MakeRequest(book, books, setBooks, toaster, router, shouldRoute) 
             return
         }
         else {
+            const json = await response.json()
             setBooks(oldBooks)
             toaster({
                 title: 'Operation Failed',
-                description: 'Book Deletion Failed',
+                description: json.msg ? json.msg : 'Deleting Book failed',
                 variant: 'destructive',
             })
         }

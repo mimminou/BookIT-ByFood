@@ -60,20 +60,24 @@ async function GetBook(bookID, toaster) {
     let jsonResponse = {}
     try {
         const resp = await fetch(`http://localhost:8046/books/${bookID}`)
+        jsonResponse = await resp.json()
         if (!resp.ok) {
             toaster({
                 title: "Operation Failed",
-                description: ", Could not fetch book",
+                description: jsonResponse.msg ? jsonResponse.msg : "Could not fetch book",
                 variant: "destructive",
             })
             return null
         }
-        jsonResponse = await resp.json()
         jsonResponse.pub_date = new Date(jsonResponse.pub_date).toISOString().split('T')[0]
     }
 
     catch {
-        //show an err here
+        toaster({
+            title: "Operation Failed",
+            description: "An error occured while fetching the book",
+            variant: "destructive",
+        })
     }
     finally {
         return jsonResponse

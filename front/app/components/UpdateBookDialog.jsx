@@ -27,10 +27,20 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
         title: book.title,
         author: book.author,
         publicationDate: book.pub_date,
-        totalPages: book.num_pages,
+        totalPages: book.num_pages ? book.num_pages : '',
     });
 
     const [err, setErr] = useState({ title: false, author: false, publicationDate: false, totalPages: false })
+
+
+    const isDateValid = (date) => {
+        const d = new Date(date)
+        const dNum = d.getTime()
+        if (!dNum && dNum !== 0) {
+            return false
+        }
+        return true
+    }
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -46,7 +56,8 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
                     newErrors[name] = value === "" ? true : false;
                     break;
                 case 'publicationDate':
-                    newErrors[name] = !/^\d{4}-\d{2}-\d{2}$/.test(value) ? true : false;
+                    newErrors[name] =
+                        !/^\d{4}-\d{2}-\d{2}$/.test(value) ? true : !isDateValid(value)
                     break;
                 case 'totalPages':
                     newErrors[name] = !/^\d+$/.test(value) && value !== "" ? true : false;
@@ -63,13 +74,20 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
 
         // Validation before submission
         const errorList = []
+        const fieldNameMap = {
+            title: 'Book Title',
+            author: 'Author',
+            publicationDate: 'Publication Date',
+            totalPages: 'Number of Pages',
+        }
         Object.entries(err).forEach(([key, isTrue]) => {
             if (isTrue) {
                 errorList.push(key)
             }
         })
         if (errorList.length > 0) {
-            alert('Please check the following fields : \n' + errorList);
+            const formattedErrList = errorList.map((key) => fieldNameMap[key])
+            alert('Please check the following fields : \n' + formattedErrList.join("\n"));
             return;
         }
 
@@ -130,7 +148,7 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
                 required
             />
 
-            <label htmlFor="publicationDate">Year of Publication (YYYY-MM-DD):</label>
+            <label htmlFor="publicationDate">Publication Date (YYYY-MM-DD):</label>
             <input
                 type="text"
                 name="publicationDate"
@@ -176,6 +194,7 @@ async function MakeRequest(newBook, oldBook, books, setBooks, setBook, toaster) 
             return
         }
         else {
+            const json = await response.json()
             if (setBook) {
                 setBook(oldBook)
             }
@@ -185,9 +204,10 @@ async function MakeRequest(newBook, oldBook, books, setBooks, setBook, toaster) 
                 }
                 return element
             }))
+            console.log(json.msg)
             toaster({
                 title: 'Operation Failed',
-                description: 'Book Update Failed',
+                description: json.msg ? json.msg : 'Book Update Failed',
                 variant: 'destructive',
             })
         }

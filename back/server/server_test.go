@@ -193,6 +193,31 @@ func TestAdd(t *testing.T) {
 				status, http.StatusBadRequest)
 		}
 	})
+
+	t.Run("Testing Add a Book with an invalide date but correct Format (not YYYY-MM-DD)", func(t *testing.T) {
+		t.Log("Testing ADD /books")
+		//create body and request
+
+		body := `{"title": "1984", "author": "Some Author", "num_pages": 328, "pub_date": "1949-11-36"}`
+		t.Log("REQUEST BODY : ", body)
+		req, err := http.NewRequest("POST", "/books", strings.NewReader(body))
+
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		// write json here
+		dbRequestHandler.Add(rr, req)
+		t.Log("RESPONSE BODY : ", rr.Body.String())
+
+		if status := rr.Code; status != http.StatusBadRequest {
+			t.Errorf("returned wrong status code: got %v want %v",
+				status, http.StatusBadRequest)
+		}
+	})
+
 }
 
 func TestDelete(t *testing.T) {
@@ -267,4 +292,24 @@ func TestUpdate(t *testing.T) {
 				status, http.StatusNotFound)
 		}
 	})
+
+	t.Run("Testing Update a book with wrong date format", func(t *testing.T) {
+		t.Log("Testing PUT /books/120")
+		//create body and request
+		body := `{"title": "1984", "author": "George Orwell", "num_pages": 328, "pub_date": "1949-16-08"}`
+		t.Log("REQUEST BODY : ", body)
+		req, err := http.NewRequest("PUT", "/books/120", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		rr := httptest.NewRecorder()
+		dbRequestHandler.Update(rr, req)
+		t.Log("RESPONSE BODY : ", rr.Body.String())
+		if status := rr.Code; status != http.StatusBadRequest {
+			t.Errorf("returned wrong status code: got %v want %v",
+				status, http.StatusBadRequest)
+		}
+	})
+
 }

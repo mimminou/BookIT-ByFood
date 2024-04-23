@@ -212,8 +212,8 @@ func (handler *Handler) Add(w http.ResponseWriter, r *http.Request) {
 		jsonResponse, _ := json.Marshal(ErrMessage{Msg: err.Error()})
 		w.Write(jsonResponse)
 		return
-
 	}
+
 	book.Book_Id = id
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(book)
@@ -298,6 +298,14 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	var book models.Book
 	json.NewDecoder(r.Body).Decode(&book)
 	book.Book_Id = id
+
+	if utils.ValidateDate(book.Pub_Date) == false {
+		w.WriteHeader(http.StatusBadRequest)
+		jsonResponse, _ := json.Marshal(ErrMessage{Msg: "Invalid date format. Should be YYYY-MM-DD"})
+		w.Write(jsonResponse)
+		return
+	}
+
 	UpdateErr := UpdateBook(handler.db, book)
 	if UpdateErr != nil {
 		if UpdateErr == sql.ErrNoRows {
