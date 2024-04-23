@@ -204,7 +204,6 @@ async function MakeRequest(newBook, oldBook, books, setBooks, setBook, toaster) 
                 }
                 return element
             }))
-            console.log(json.msg)
             toaster({
                 title: 'Operation Failed',
                 description: json.msg ? json.msg : 'Book Update Failed',
