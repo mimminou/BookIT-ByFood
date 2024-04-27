@@ -15,6 +15,15 @@ interface DeleteBookFormProps {
     shouldRoute: boolean
 }
 
+interface RequestArgs {
+    book: Book
+    books: Book[]
+    setBooks: Dispatch<SetStateAction<Book[]>>
+    toaster: typeof toast
+    shouldRoute: boolean
+    route: Function
+}
+
 export default function DeleteBookDialog({ open, setOpen, shouldRoute }) {
     const ctx = useContext(Context)
     return (
@@ -34,15 +43,24 @@ export default function DeleteBookDialog({ open, setOpen, shouldRoute }) {
 }
 
 
-function DeleteBookForm({ books, setBooks, setOpen, book, toaster, shouldRoute }: DeleteBookFormProps) {
+function DeleteBookForm(props: DeleteBookFormProps) {
+    const { books, setBooks, setOpen, book, toaster, shouldRoute } = props
     const router = useRouter()
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        MakeRequest(book, books, setBooks, toaster, shouldRoute, () => {
-            console.log('Book deleted')
-            router.push('/books') // Need to do it this way, very bad practice to pass router to non components
-        })
+        MakeRequest({
+            book,
+            books,
+            setBooks,
+            toaster,
+            shouldRoute,
+            route: () => {
+                console.log('Book deleted')
+                router.push('/books') // Need to do it this way, as it's not possible to pass the router to non components
+            }
+        }
+        )
 
         const updatedBookList = books.filter((element: Book) => {
             if (element.book_id !== book.book_id) {
@@ -65,8 +83,7 @@ function DeleteBookForm({ books, setBooks, setOpen, book, toaster, shouldRoute }
     );
 }
 
-async function MakeRequest(book: Book, books: Book[], setBooks: Dispatch<SetStateAction<Book[]>>,
-    toaster: typeof toast, ShouldRoute: boolean, route: () => void) {
+async function MakeRequest({ book, books, setBooks, toaster, shouldRoute, route }: RequestArgs) {
     const oldBooks = books // save old state
     try {
         const response = await fetch(`http://localhost:8046/books/${book.book_id}`, {
@@ -91,7 +108,7 @@ async function MakeRequest(book: Book, books: Book[], setBooks: Dispatch<SetStat
         toaster({
             description: 'Book Deleted',
         })
-        if (ShouldRoute) {
+        if (shouldRoute) {
             route()
         }
     }

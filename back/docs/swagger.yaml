@@ -18,13 +18,31 @@ definitions:
         description: '@Property title string true "Title"'
         type: string
     type: object
-  server.ErrMessage:
+  models.RequestStruct:
+    description: Process URL
+    properties:
+      operation:
+        description: "@Property\t\toperation string true \"Operation to perform\"\n@Enum\t\t\tcanonical,
+          redirection, all"
+        type: string
+      url:
+        description: "@Property\t\turl string true \"URL to process\""
+        type: string
+    type: object
+  models.ResponseStruct:
+    properties:
+      processed_url:
+        type: string
+    type: object
+  services.ErrMessage:
     description: ErrMessage
     properties:
       msg:
         type: string
     type: object
 info:
+  title: "BookItByFood"
+  version: "2.0"
   contact: {}
 paths:
   /books/:
@@ -44,13 +62,13 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
         "405":
           description: Method Not Allowed
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
       summary: Get all books
       tags:
       - books
@@ -75,7 +93,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
         "405":
           description: Method Not Allowed
       summary: Add a new book
@@ -102,7 +120,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
         "405":
           description: Method Not Allowed
       summary: Delete a book
@@ -130,7 +148,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
         "405":
           description: Method Not Allowed
       summary: Get a single Book
@@ -162,18 +180,57 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
         "405":
           description: Method Not Allowed
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/server.ErrMessage'
+            $ref: '#/definitions/services.ErrMessage'
       summary: Update a book
       tags:
       - books
+  /docs/:
+    get:
+      description: Serves Swagger Docs
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+      summary: Serves Swagger Docs
+      tags:
+      - docs
+  /url/:
+    post:
+      consumes:
+      - application/json
+      description: Processes URLs depending on the requested operation
+      parameters:
+      - description: Request Body
+        in: body
+        name: RequestStruct
+        required: true
+        schema:
+          $ref: '#/definitions/models.RequestStruct'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/services.ErrMessage'
+        "405":
+          description: Method Not Allowed
+      summary: Process URL
+      tags:
+      - url
 swagger: "2.0"

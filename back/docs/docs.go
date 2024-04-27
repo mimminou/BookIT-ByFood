@@ -41,7 +41,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     },
                     "405": {
@@ -50,7 +50,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     }
                 }
@@ -88,7 +88,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     },
                     "405": {
@@ -132,7 +132,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     },
                     "405": {
@@ -180,13 +180,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     },
                     "405": {
@@ -195,7 +195,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     }
                 }
@@ -231,7 +231,67 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/server.ErrMessage"
+                            "$ref": "#/definitions/services.ErrMessage"
+                        }
+                    },
+                    "405": {
+                        "description": "Method Not Allowed"
+                    }
+                }
+            }
+        },
+        "/docs/": {
+            "get": {
+                "description": "Serves Swagger Docs",
+                "tags": [
+                    "docs"
+                ],
+                "summary": "Serves Swagger Docs",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/url/": {
+            "post": {
+                "description": "Processes URLs depending on the requested operation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "url"
+                ],
+                "summary": "Process URL",
+                "parameters": [
+                    {
+                        "description": "Request Body",
+                        "name": "RequestStruct",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RequestStruct"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseStruct"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/services.ErrMessage"
                         }
                     },
                     "405": {
@@ -268,7 +328,29 @@ const docTemplate = `{
                 }
             }
         },
-        "server.ErrMessage": {
+        "models.RequestStruct": {
+            "description": "Process URL",
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "description": "@Property\t\toperation string true \"Operation to perform\"\n@Enum\t\t\tcanonical, redirection, all",
+                    "type": "string"
+                },
+                "url": {
+                    "description": "@Property\t\turl string true \"URL to process\"",
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResponseStruct": {
+            "type": "object",
+            "properties": {
+                "processed_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.ErrMessage": {
             "description": "ErrMessage",
             "type": "object",
             "properties": {

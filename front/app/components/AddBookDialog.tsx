@@ -1,5 +1,4 @@
 import { Dialog, DialogHeader, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { } from "react"
 import { Context } from '../context'
 import { Dispatch, SetStateAction, useState, useContext, ChangeEvent, FormEvent } from "react"
 import { Book, ErrMessage } from '@/app/types'
@@ -12,7 +11,7 @@ interface AddBookFormProps {
     toaster: typeof toast
 }
 
-interface RequestProps {
+interface RequestArgs {
     newBook: Book
     books: Book[]
     setBooks: Dispatch<SetStateAction<Book[]>>
@@ -173,7 +172,8 @@ function AddBookForm(props: AddBookFormProps) {
     );
 }
 
-async function MakeRequest({ newBook, books, setBooks, toaster }: RequestProps) {
+async function MakeRequest(props: RequestArgs) {
+    const { newBook, books, setBooks, toaster } = props
     try {
         const response = await fetch('http://localhost:8046/books', {
             method: 'POST',

@@ -10,7 +10,7 @@ interface UpdateBookFormProps {
     setOpen: Dispatch<SetStateAction<boolean>>
     book: Book
     toaster: typeof toast
-    setBook?: Dispatch<SetStateAction<Book>> //Optional field,
+    setBook?: Dispatch<SetStateAction<Book>> //Optional field
 }
 
 interface UpdateBookDialogProps {
@@ -20,7 +20,7 @@ interface UpdateBookDialogProps {
 }
 
 
-interface RequestProps {
+interface RequestArgs {
     oldBook: Book
     newBook: Book
     books: Book[]
@@ -210,10 +210,10 @@ function UpdateBookForm(props: UpdateBookFormProps) {
 
             <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Update</button>
         </form>
-    );
+    )
 }
 
-async function MakeRequest(props: RequestProps) {
+async function MakeRequest(props: RequestArgs) {
     const { oldBook, newBook, books, setBooks, toaster, setBook } = props
     try {
         const response = await fetch(`http://localhost:8046/books/${oldBook.book_id}`, {
