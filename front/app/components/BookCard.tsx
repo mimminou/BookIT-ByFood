@@ -1,7 +1,8 @@
 import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card"
 import Image from 'next/image'
+import type { Book } from '@/app/types'
 
-export default function BookCard({ book }) {
+export default function BookCard({ book }: { book: Book }) {
     return (
         <Card className="min-w-1/6">
             <CardHeader>
@@ -14,7 +15,7 @@ export default function BookCard({ book }) {
     )
 }
 
-function BookDetails({ book }) {
+function BookDetails({ book }: { book: Book }) {
     return (
         <div className="flex flex-col md:flex-row justify-between">
             <ul>

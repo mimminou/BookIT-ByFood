@@ -1,4 +1,5 @@
-export default function Book({ book }) {
+import type { Book } from '@/app/types'
+export default function BookComponent({ book }: { book: Book }) {
     return (
         <div>
             <ul>

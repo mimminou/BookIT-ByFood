@@ -1,8 +1,19 @@
 import { Dialog, DialogHeader, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Context } from '../context'
-import { useContext } from 'react'
+import { Dispatch, SetStateAction, useContext, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { Book, ErrMessage } from '@/app/types'
+import { toast } from '@/components/ui/use-toast'
 
+
+interface DeleteBookFormProps {
+    books: Book[]
+    setBooks: Dispatch<SetStateAction<Book[]>>
+    setOpen: Dispatch<SetStateAction<boolean>>
+    book: Book
+    toaster: typeof toast
+    shouldRoute: boolean
+}
 
 export default function DeleteBookDialog({ open, setOpen, shouldRoute }) {
     const ctx = useContext(Context)
@@ -22,23 +33,25 @@ export default function DeleteBookDialog({ open, setOpen, shouldRoute }) {
     )
 }
 
-function DeleteBookForm({ books, setBooks, setOpen, book, toaster, shouldRoute }) {
 
+function DeleteBookForm({ books, setBooks, setOpen, book, toaster, shouldRoute }: DeleteBookFormProps) {
     const router = useRouter()
-
-    const handleSubmit = (event) => {
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        MakeRequest(book, books, setBooks, toaster, router, shouldRoute)
+        MakeRequest(book, books, setBooks, toaster, shouldRoute, () => {
+            console.log('Book deleted')
+            router.push('/books') // Need to do it this way, very bad practice to pass router to non components
+        })
 
-        const updatedBookList = books.filter((element) => {
+        const updatedBookList = books.filter((element: Book) => {
             if (element.book_id !== book.book_id) {
                 return element
             }
         })
         setOpen(false)
         setBooks(updatedBookList)
-    };
+    }
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -52,7 +65,8 @@ function DeleteBookForm({ books, setBooks, setOpen, book, toaster, shouldRoute }
     );
 }
 
-async function MakeRequest(book, books, setBooks, toaster, router, shouldRoute) {
+async function MakeRequest(book: Book, books: Book[], setBooks: Dispatch<SetStateAction<Book[]>>,
+    toaster: typeof toast, ShouldRoute: boolean, route: () => void) {
     const oldBooks = books // save old state
     try {
         const response = await fetch(`http://localhost:8046/books/${book.book_id}`, {
@@ -62,33 +76,39 @@ async function MakeRequest(book, books, setBooks, toaster, router, shouldRoute) 
             },
         })
 
-        if (response.ok) {
-            toaster({
-                description: 'Book Deleted',
-            })
-
-            if (shouldRoute) {
-                router.push('/books')
+        if (!response.ok) {
+            let jsonResponse = await response.json()
+            console.log("RESPNSOE IS NOT OK", response.status)
+            //check if it's an err
+            if ("msg" in jsonResponse) {
+                jsonResponse = jsonResponse as ErrMessage
+                throw new Error(jsonResponse.msg)
             }
-            return
+            else {
+                throw new Error("Unkown response type")
+            }
         }
-        else {
-            const json = await response.json()
-            setBooks(oldBooks)
-            toaster({
-                title: 'Operation Failed',
-                description: json.msg ? json.msg : 'Deleting Book failed',
-                variant: 'destructive',
-            })
+        toaster({
+            description: 'Book Deleted',
+        })
+        if (ShouldRoute) {
+            route()
         }
     }
     catch (error) {
         setBooks(oldBooks)
+        if ("msg" in error) {
+            toaster({
+                title: 'Operation Failed',
+                description: error.msg,
+                variant: 'destructive',
+            })
+            return
+        }
         toaster({
             title: 'Operation Failed',
             description: 'Network Error, Could not connect to server',
             variant: 'destructive',
         })
-        return
     }
 }

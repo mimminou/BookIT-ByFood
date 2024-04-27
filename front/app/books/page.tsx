@@ -5,9 +5,21 @@ import AddBookDialog from '@/app/components/AddBookDialog'
 import UpdateBookDialog from '@/app/components/UpdateBookDialog'
 import DeleteBookDialog from '@/app/components/DeleteBookDialog'
 import React, { useState, useEffect } from 'react'
-import { useContext } from 'react'
+import { useContext, Dispatch, SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
 import { Context } from '../context'
+import { Book, ErrMessage } from '@/app/types'
+import { toast } from '@/components/ui/use-toast'
+import { MouseEvent } from 'react'
+
+
+interface BookTableProps {
+    books: Book[]
+    setUpdateDialogOpen: Dispatch<SetStateAction<boolean>>
+    setDeleteDialogOpen: Dispatch<SetStateAction<boolean>>
+    setSelectedBook: Dispatch<SetStateAction<Book>>
+}
+
 
 export default function BookList() {
 
@@ -17,18 +29,17 @@ export default function BookList() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const router = useRouter()
 
     useEffect(() => {
         setIsLoading(true)
-        GetBooks(ctx.toast).then((data) => {
+        GetBooks(ctx.toast).then((data: Book[] | ErrMessage) => {
             if (!data) {
                 setError("Something went wrong")
                 setIsLoading(false)
                 return
             }
-            if (data.msg) {
-                setError("404")
+            if ("msg" in data) {
+                setError(data.msg)
                 setIsLoading(false)
                 return
             }
@@ -51,22 +62,24 @@ export default function BookList() {
             {isLoading ?
                 <p>Loading...</p> :
                 <div className='flex items-center justify-center'>
-                    {BookTable(ctx.books, router, setUpdateDialogOpen, setDeleteDialogOpen, ctx.setSelectedBook, ctx.setSelectedBookID)}
+                    <BookTable books={ctx.books} setUpdateDialogOpen={setUpdateDialogOpen} setDeleteDialogOpen={setDeleteDialogOpen} setSelectedBook={ctx.setSelectedBook}></BookTable>
                 </div>
             }
         </div>
     )
 }
 
-function BookTable(books, router, setUpdateDialogOpen, setDeleteDialogOpen, setSelectedBook) {
+function BookTable({ books, setUpdateDialogOpen,
+    setDeleteDialogOpen, setSelectedBook }: BookTableProps) {
 
-    const onUpdateClick = (event, book) => {
+    const router = useRouter()
+    const onUpdateClick = (event: MouseEvent<HTMLButtonElement>, book: Book) => {
         event.stopPropagation()
         setSelectedBook(book)
         setUpdateDialogOpen(true)
     }
 
-    const onDeleteClick = (event, book) => {
+    const onDeleteClick = (event: MouseEvent<HTMLButtonElement>, book: Book) => {
         event.stopPropagation()
         setSelectedBook(book)
         setDeleteDialogOpen(true)
@@ -86,7 +99,7 @@ function BookTable(books, router, setUpdateDialogOpen, setDeleteDialogOpen, setS
             </TableHeader>
             <TableBody>
 
-                {books.map((book) => (
+                {books.map((book: Book) => (
                     <TableRow key={book.book_id} className="cursor-pointer" onClick={() => {
                         router.push(`/books/${book.book_id}`)
                     }
@@ -101,37 +114,45 @@ function BookTable(books, router, setUpdateDialogOpen, setDeleteDialogOpen, setS
                         </TableCell>
                     </TableRow>
                 ))}
-
             </TableBody>
         </Table>
     )
 }
 
-async function GetBooks(toaster) {
-    let jsonResponse = {}
+async function GetBooks(toaster: typeof toast) {
     try {
         const resp = await fetch("http://localhost:8046/books")
-        jsonResponse = await resp.json()
-        if (jsonResponse.msg) {
+        let jsonResponse = await resp.json()
+        if (!resp.ok) {
+            //check if it's an err
+            if ("msg" in jsonResponse) {
+                jsonResponse = jsonResponse as ErrMessage
+                throw new Error(jsonResponse.msg)
+            }
+            else {
+                throw new Error("Unkown response type")
+            }
+        }
+        jsonResponse = jsonResponse as Book[]
+        jsonResponse.forEach((element: Book) => {
+            element.pub_date = new Date(element.pub_date).toISOString().split('T')[0]
+        })
+        return jsonResponse
+    }
+    catch (error) {
+        if ("msg" in error) {
             toaster({
                 title: "Error, Could not fetch book list",
-                description: jsonResponse.msg,
+                description: error.msg,
                 variant: "destructive",
             })
-            return jsonResponse
-
+            return { msg: error.msg } as ErrMessage
         }
-        jsonResponse.forEach(element => {
-            element.pub_date = new Date(element.pub_date).toISOString().split('T')[0]
-        });
-    }
-    catch {
         toaster({
             title: "Error, Could not fetch book list",
             description: "Network Error",
             variant: "destructive",
         })
-        return null
+        return { msg: "Network Error" } as ErrMessage
     }
-    return jsonResponse
 }

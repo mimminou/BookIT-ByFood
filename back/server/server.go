@@ -296,7 +296,15 @@ func (handler *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var book models.Book
-	json.NewDecoder(r.Body).Decode(&book)
+	decodeErr := json.NewDecoder(r.Body).Decode(&book)
+
+	if decodeErr != nil {
+		log.Println(decodeErr)
+		w.WriteHeader(http.StatusBadRequest)
+		jsonResponse, _ := json.Marshal(ErrMessage{Msg: decodeErr.Error()})
+		w.Write(jsonResponse)
+		return
+	}
 	book.Book_Id = id
 
 	if utils.ValidateDate(book.Pub_Date) == false {

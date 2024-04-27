@@ -1,39 +1,52 @@
 import { Dialog, DialogHeader, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { useState } from "react"
-import { Context } from '@/app/context'
-import { useContext } from 'react'
+import { } from "react"
+import { Context } from '../context'
+import { Dispatch, SetStateAction, useState, useContext, ChangeEvent, FormEvent } from "react"
+import { Book, ErrMessage } from '@/app/types'
+import { toast } from '@/components/ui/use-toast'
 
+interface AddBookFormProps {
+    books: Book[]
+    setBooks: Dispatch<SetStateAction<Book[]>>
+    setOpen: Dispatch<SetStateAction<boolean>>
+    toaster: typeof toast
+}
 
-export default function UpdateBookDialog({ open, setOpen, setBook }) {
+interface RequestProps {
+    newBook: Book
+    books: Book[]
+    setBooks: Dispatch<SetStateAction<Book[]>>
+    toaster: typeof toast
+}
+
+export default function AddBookDialog({ open, setOpen }) {
     const ctx = useContext(Context)
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        Update Book
+                        <AddBookForm books={ctx.books} setBooks={ctx.setBooks} setOpen={setOpen} toaster={ctx.toast} />
                     </DialogTitle>
                 </DialogHeader>
-                <UpdateBookForm books={ctx.books} setBooks={ctx.setBooks} setBook={setBook} setOpen={setOpen} book={ctx.selectedBook} toaster={ctx.toast} />
             </DialogContent>
         </Dialog>
     )
 }
 
-function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
+function AddBookForm(props: AddBookFormProps) {
+    const { books, setBooks, setOpen, toaster } = props
 
-    const oldBook = book
     const [formData, setFormData] = useState({
-        title: book.title,
-        author: book.author,
-        publicationDate: book.pub_date,
-        totalPages: book.num_pages ? book.num_pages : '',
+        title: '',
+        author: '',
+        publicationDate: '',
+        totalPages: '',
     });
 
     const [err, setErr] = useState({ title: false, author: false, publicationDate: false, totalPages: false })
 
-
-    const isDateValid = (date) => {
+    const isDateValid = (date: string) => {
         const d = new Date(date)
         const dNum = d.getTime()
         if (!dNum && dNum !== 0) {
@@ -42,13 +55,13 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
         return true
     }
 
-    const handleChange = (event) => {
+    const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
         setFormData((prevData) => ({ ...prevData, [name]: value }));
 
         setErr((prevErrors) => {
             const newErrors = { ...prevErrors };
-            switch (name) {
+            switch (name) { //If the return is true, it's invalid and field gets added to errList
                 case 'title':
                     newErrors[name] = value === "" ? true : false;
                     break;
@@ -58,9 +71,10 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
                 case 'publicationDate':
                     newErrors[name] =
                         !/^\d{4}-\d{2}-\d{2}$/.test(value) ? true : !isDateValid(value)
+
                     break;
                 case 'totalPages':
-                    newErrors[name] = !/^\d+$/.test(value) && value !== "" ? true : false;
+                    newErrors[name] = !/^\d+$/.test(value) ? true : false;
                     break;
                 default:
                     break;
@@ -69,7 +83,7 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
         });
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         // Validation before submission
@@ -80,6 +94,7 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
             publicationDate: 'Publication Date',
             totalPages: 'Number of Pages',
         }
+
         Object.entries(err).forEach(([key, isTrue]) => {
             if (isTrue) {
                 errorList.push(key)
@@ -91,37 +106,20 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
             return;
         }
 
-        //Optimistic update
         const newBook = {
             title: formData.title,
             author: formData.author,
             pub_date: formData.publicationDate,
             num_pages: parseInt(formData.totalPages),
         }
+        //
+        //it's easier to wait for server response instead of optimistic update here,
+        //there are many edge cases here and this is the most reliable way
+        MakeRequest({ newBook, books, setBooks, toaster })
 
-        MakeRequest(newBook, oldBook, books, setBooks, setBook, toaster)
-
-        const updatedBook = {
-            book_id: book.book_id,
-            title: formData.title,
-            author: formData.author,
-            pub_date: formData.publicationDate,
-            num_pages: parseInt(formData.totalPages)
-        }
-        if (setBook) {
-            setBook(updatedBook)
-        }
-
-        const updatedBookList = books.map((element) => {
-            if (element.book_id === updatedBook.book_id) {
-                return updatedBook
-            }
-            return element
-        })
-
+        // Reset form, might not be necessary
+        setFormData({ title: '', author: '', publicationDate: '', totalPages: '' });
         setOpen(false)
-        setBooks(updatedBookList)
-
     };
 
     return (
@@ -170,62 +168,54 @@ function UpdateBookForm({ books, setBooks, setBook, setOpen, book, toaster }) {
                 onChange={handleChange}
             />
 
-            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Update</button>
+            <button type="submit" className="bg-green-600 hover:bg-green-700 text-white rounded font-bold px-4 py-2">Add</button>
         </form>
     );
 }
 
-
-async function MakeRequest(newBook, oldBook, books, setBooks, setBook, toaster) {
-
+async function MakeRequest({ newBook, books, setBooks, toaster }: RequestProps) {
     try {
-        const response = await fetch(`http://localhost:8046/books/${oldBook.book_id}`, {
-            method: 'PUT',
+        const response = await fetch('http://localhost:8046/books', {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(newBook)
         })
 
-        if (response.ok) {
+        let jsonResponse = await response.json()
+        if (!response.ok) {
+            //check if it's an err
+            if ("msg" in jsonResponse) {
+                jsonResponse = jsonResponse as ErrMessage
+                throw new Error(jsonResponse.msg)
+            }
+            else {
+                throw new Error("Unkown response type")
+            }
+        }
+        jsonResponse = jsonResponse as Book
+        setBooks((prevBooks) => [...prevBooks, jsonResponse])
+        toaster({
+            title: 'Operation Successful',
+            description: 'Book added successfully',
+        })
+        return
+    }
+    catch (error) {
+        setBooks(books)
+        if ("msg" in error) {
             toaster({
-                description: 'Book Updated',
+                title: 'Operation Failed',
+                description: error.msg,
+                variant: 'destructive',
             })
             return
         }
-        else {
-            const json = await response.json()
-            if (setBook) {
-                setBook(oldBook)
-            }
-            setBooks(books.map((element) => {
-                if (element.book_id === oldBook.book_id) {
-                    return oldBook
-                }
-                return element
-            }))
-            toaster({
-                title: 'Operation Failed',
-                description: json.msg ? json.msg : 'Book Update Failed',
-                variant: 'destructive',
-            })
-        }
-    }
-    catch (error) {
-        if (setBook) {
-            setBook(oldBook)
-        }
-        setBooks(books.map((element) => {
-            if (element.book_id === oldBook.book_id) {
-                return oldBook
-            }
-            return element
-        }))
         toaster({
             title: 'Operation Failed',
             description: 'Network Error, Could not connect to server',
             variant: 'destructive',
         })
-        return
     }
 }
