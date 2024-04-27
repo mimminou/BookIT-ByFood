@@ -2,7 +2,7 @@ import { Dialog, DialogHeader, DialogContent, DialogTitle } from "@/components/u
 import { Context } from '../context'
 import { Dispatch, SetStateAction, useContext, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Book, ErrMessage } from '@/app/types'
+import { Book, ErrMessage, ServerError } from '@/app/types'
 import { toast } from '@/components/ui/use-toast'
 
 
@@ -56,7 +56,6 @@ function DeleteBookForm(props: DeleteBookFormProps) {
             toaster,
             shouldRoute,
             route: () => {
-                console.log('Book deleted')
                 router.push('/books') // Need to do it this way, as it's not possible to pass the router to non components
             }
         }
@@ -95,11 +94,10 @@ async function MakeRequest({ book, books, setBooks, toaster, shouldRoute, route 
 
         if (!response.ok) {
             let jsonResponse = await response.json()
-            console.log("RESPNSOE IS NOT OK", response.status)
             //check if it's an err
             if ("msg" in jsonResponse) {
                 jsonResponse = jsonResponse as ErrMessage
-                throw new Error(jsonResponse.msg)
+                throw new ServerError(jsonResponse)
             }
             else {
                 throw new Error("Unkown response type")

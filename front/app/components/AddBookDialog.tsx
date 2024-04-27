@@ -1,7 +1,7 @@
 import { Dialog, DialogHeader, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Context } from '../context'
 import { Dispatch, SetStateAction, useState, useContext, ChangeEvent, FormEvent } from "react"
-import { Book, ErrMessage } from '@/app/types'
+import { Book, ErrMessage, ServerError } from '@/app/types'
 import { toast } from '@/components/ui/use-toast'
 
 interface AddBookFormProps {
@@ -188,7 +188,7 @@ async function MakeRequest(props: RequestArgs) {
             //check if it's an err
             if ("msg" in jsonResponse) {
                 jsonResponse = jsonResponse as ErrMessage
-                throw new Error(jsonResponse.msg)
+                throw new ServerError(jsonResponse)
             }
             else {
                 throw new Error("Unkown response type")

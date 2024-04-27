@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react'
 import { useContext, Dispatch, SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
 import { Context } from '../context'
-import { Book, ErrMessage } from '@/app/types'
+import { Book, ErrMessage, ServerError } from '@/app/types'
 import { toast } from '@/components/ui/use-toast'
 import { MouseEvent } from 'react'
 
@@ -19,7 +19,6 @@ interface BookTableProps {
     setDeleteDialogOpen: Dispatch<SetStateAction<boolean>>
     setSelectedBook: Dispatch<SetStateAction<Book>>
 }
-
 
 export default function BookList() {
 
@@ -127,7 +126,7 @@ async function GetBooks(toaster: typeof toast) {
             //check if it's an err
             if ("msg" in jsonResponse) {
                 jsonResponse = jsonResponse as ErrMessage
-                throw new Error(jsonResponse.msg)
+                throw new ServerError(jsonResponse)
             }
             else {
                 throw new Error("Unkown response type")
@@ -146,7 +145,7 @@ async function GetBooks(toaster: typeof toast) {
                 description: error.msg,
                 variant: "destructive",
             })
-            return { msg: error.msg } as ErrMessage
+            return error
         }
         toaster({
             title: "Error, Could not fetch book list",

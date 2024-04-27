@@ -5,8 +5,8 @@ import { Context } from '@/app/context'
 import { useContext } from 'react'
 import UpdateBookDialog from '@/app/components/UpdateBookDialog'
 import DeleteBookDialog from '@/app/components/DeleteBookDialog'
-import { useState, useEffect } from 'react'
-import { Book, ErrMessage } from '@/app/types'
+import { useState, useEffect, Dispatch, SetStateAction } from 'react'
+import { Book, ErrMessage, ServerError } from '@/app/types'
 import { toast } from '@/components/ui/use-toast'
 import { MouseEvent } from 'react'
 
@@ -67,6 +67,7 @@ async function GetBook(bookID: number, toaster: typeof toast) {
             //check if it's an err
             if ("msg" in jsonResponse) {
                 jsonResponse = jsonResponse as ErrMessage
+                throw new ServerError(jsonResponse)
             }
             else {
                 throw new Error("Unkown response type")
@@ -84,13 +85,13 @@ async function GetBook(bookID: number, toaster: typeof toast) {
                 description: error.msg,
                 variant: "destructive",
             })
-            return
+            return error
         }
         toaster({
             title: "Operation Failed",
-            description: "An error occured while fetching the book",
+            description: "Network Error, Could not connect to server",
             variant: "destructive",
         })
-        return { msg: "An error occured while fetching the book" } as ErrMessage
+        return { msg: "Network Error" } as ErrMessage
     }
 }

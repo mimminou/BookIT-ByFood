@@ -1,6 +1,6 @@
 import { Dialog, DialogHeader, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Context } from '@/app/context'
-import { Book, ErrMessage } from '@/app/types'
+import { Book, ErrMessage, ServerError } from '@/app/types'
 import { toast } from '@/components/ui/use-toast'
 import { FormEvent, ChangeEvent, useContext, useState, Dispatch, SetStateAction } from 'react'
 
@@ -74,10 +74,6 @@ function UpdateBookForm(props: UpdateBookFormProps) {
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
-        if (name == "totalPages") {
-            console.log(name, value, typeof value)
-        }
-        console.log(name, value)
         setFormData((prevData) => ({ ...prevData, [name]: value }));
 
         setErr((prevErrors) => {
@@ -124,8 +120,6 @@ function UpdateBookForm(props: UpdateBookFormProps) {
             alert('Please check the following fields : \n' + formattedErrList.join("\n"));
             return;
         }
-
-        console.log(formData)
 
         //Optimistic update
         const newBook = {
@@ -226,9 +220,9 @@ async function MakeRequest(props: RequestArgs) {
         let jsonresponse = await response.json()
         if (!response.ok) {
             // Throw on Failure, whether we get a failure message or not
-            jsonresponse = jsonresponse as ErrMessage
             if ("msg" in jsonresponse) {
-                throw new Error(jsonresponse)
+                jsonresponse = jsonresponse as ErrMessage
+                throw new ServerError(jsonresponse)
             }
             else {
                 throw new Error("Unkown response type")

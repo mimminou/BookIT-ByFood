@@ -11,4 +11,14 @@ interface ErrMessage {
     msg: string
 }
 
-export type { Book, ErrMessage }
+class ServerError extends Error {
+    constructor(Err : ErrMessage) {
+        super(Err.msg);
+        this.name = 'ServerError';
+        this.msg = Err.msg
+    }
+    msg: string;
+}
+
+export type { Book, ErrMessage}
+export {ServerError}
